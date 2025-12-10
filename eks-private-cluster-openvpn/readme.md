@@ -98,7 +98,22 @@ sudo /usr/local/openvpn_as/scripts/sacli start
 # Verify settings
 sudo /usr/local/openvpn_as/scripts/sacli ConfigQuery | grep "vpn.server.routing"
 ```
-Expected output: ``` "vpn.server.routing.private_network.0": "<VPC_CIDR>" ```
+
+for example 
+```
+# Add your VPC CIDR (10.0.0.0/16) to routing
+sudo /usr/local/openvpn_as/scripts/sacli --key "vpn.server.routing.private_network.0" --value "10.0.0.0/16" ConfigPut
+
+# Don't route all internet traffic through VPN (only route VPC traffic)
+sudo /usr/local/openvpn_as/scripts/sacli --key "vpn.client.routing.reroute_gw" --value "false" ConfigPut
+
+# Apply changes and restart OpenVPN
+sudo /usr/local/openvpn_as/scripts/sacli start
+
+# Verify the settings were applied
+sudo /usr/local/openvpn_as/scripts/sacli ConfigQuery | grep "vpn.server.routing"
+```
+Expected output: ```"vpn.server.routing.private_network.0": "10.0.0.0/16" ```
 
 ## Step 6: Test VPN Connectivity
 - Windows:
@@ -107,4 +122,5 @@ eg: ``` bashroute print | findstr 10.0 ```
 
 - Ping private EKS nodes:
 ``` ping <EKS_PRIVATE_IP> ```
+
 
