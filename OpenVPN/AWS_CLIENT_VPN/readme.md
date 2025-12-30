@@ -1,15 +1,15 @@
-# AWS Client VPN Setup Guide
+## AWS Client VPN Setup Guide
 
 Complete guide to set up AWS Client VPN for secure access to private AWS resources, similar to OpenVPN Access Server.
 
-## Prerequisites
+### Prerequisites
 
 - AWS Account with appropriate permissions
 - AWS CLI installed and configured
 - Git installed
 - Basic understanding of VPC networking
 
-## Architecture Overview
+### Architecture Overview
 
 ```
 Internet → AWS Client VPN Endpoint → Private Subnets → Private Resources
@@ -21,7 +21,7 @@ Internet → AWS Client VPN Endpoint → Private Subnets → Private Resources
 - Private Subnets: `10.0.10.0/24`, `10.0.20.0/24`
 - Client VPN CIDR: `172.16.0.0/22` (non-overlapping)
 
-## Step 1: Generate Certificates
+### Step 1: Generate Certificates
 
 AWS Client VPN requires mutual TLS authentication using certificates.
 
@@ -47,11 +47,10 @@ When prompted, enter a Common Name for your CA (e.g., "VPN-CA").
 ### Generate Server Certificate
 
 ```bash
-./easyrsa build-server-full server nopass 
+./easyrsa build-server-full server nopass
 ```
 or 
-
-```bash
+```
 ./easyrsa build-server-full server.domain.tld nopass
 ```
 ### Generate Client Certificates
@@ -74,7 +73,7 @@ Your certificates are located in:
 - **Client Private Keys**: `pki/private/client1.key`, `pki/private/client2.key`, etc.
 - **CA Certificate**: `pki/ca.crt`
 
-## Step 2: Import Certificates to AWS ACM
+### Step 2: Import Certificates to AWS ACM
 
 ### Import Server Certificate
 
@@ -111,7 +110,7 @@ Repeat the above process for each client certificate:
 
 **Note:** You need to import at least one client certificate. Import all client certificates you plan to use.
 
-## Step 3: Create Client VPN Endpoint
+### Step 3: Create Client VPN Endpoint
 
 1. Go to **VPC Console** → **Client VPN Endpoints** → **Create Client VPN Endpoint**
 
@@ -133,7 +132,7 @@ Repeat the above process for each client certificate:
 
 2. Click **Create Client VPN Endpoint**
 
-## Step 4: Associate Target Networks
+### Step 4: Associate Target Networks
 
 Associate your private subnets with the VPN endpoint:
 
@@ -146,37 +145,37 @@ Associate your private subnets with the VPN endpoint:
 
 Wait for status to become **Available**.
 
-## Step 5: Add Authorization Rule
+### Step 5: Add Authorization Rule
 
 Allow VPN clients to access your VPC:
 
 1. Go to **Authorization rules** tab
 2. Click **Add authorization rule**
 3. Configuration:
-   - **Destination network**: `10.0.0.0/16` (your VPC CIDR)
+   - **Destination network**: `10.0.0.0/16` (your VPC CIDR) or `0.0.0.0/0`
    - **Grant access to**: All users
    - **Description**: Allow access to VPC
 4. Click **Add authorization rule**
 
-## Step 6: Add Route
+### Step 6: Add Route
 
 Add routing to direct traffic to your VPC:
 
 1. Go to **Route table** tab
 2. Click **Create route**
 3. Configuration:
-   - **Route destination**: `10.0.0.0/16`
+   - **Route destination**: `10.0.0.0/16` or `0.0.0.0/0`
    - **Target VPC Subnet ID**: Select one of the associated subnets
    - **Description**: Route to VPC
 4. Click **Create route**
 
-## Step 7: Download Client Configuration
+### Step 7: Download Client Configuration
 
 1. Select your Client VPN Endpoint
 2. Click **Download client configuration**
 3. Save the file as `downloaded-client-config.ovpn`
 
-## Step 8: Prepare Client Configuration Files
+### Step 8: Prepare Client Configuration Files
 
 For each user, you need to create a custom `.ovpn` file with their certificate embedded.
 
@@ -186,32 +185,24 @@ Edit the downloaded config file and add the following at the end:
 
 ```bash
 # Add client certificate
-echo '<cert>' >> downloaded-client-config.ovpn
-cat pki/issued/client1.crt | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' >> downloaded-client-config.ovpn
-echo '</cert>' >> downloaded-client-config.ovpn
+'<cert>' >> downloaded-client-config.ovpn
+#paste the content of the certs
+cat pki/issued/client1.crt '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' >> downloaded-client-config.ovpn
+'</cert>' >> downloaded-client-config.ovpn
 
 # Add client private key
-echo '<key>' >> downloaded-client-config.ovpn
+'<key>' >> downloaded-client-config.ovpn
+#paste the content of the certs
 cat pki/private/client1.key >> downloaded-client-config.ovpn
-echo '</key>' >> downloaded-client-config.ovpn
+'</key>' >> downloaded-client-config.ovpn
 ```
 
 Rename the file to `client1-config.ovpn` and distribute to the respective user.
 
 Repeat for each client certificate (client2, client3, etc.).
 
-## Step 9: Configure Security Groups
 
-Ensure your private resources allow traffic from VPN clients:
-
-1. Go to **EC2** → **Security Groups**
-2. Select the security group attached to your private resources
-3. Add inbound rule:
-   - **Type**: All Traffic (or specific ports)
-   - **Source**: `172.16.0.0/22` (Client VPN CIDR)
-   - **Description**: VPN Client Access
-
-## Step 10: Install and Connect
+### Step 9: Install and Connect
 
 ### Install AWS VPN Client
 
@@ -227,7 +218,7 @@ Download and install the AWS VPN Client:
 5. Click **Add Profile**
 6. Click **Connect**
 
-## Verification
+### Verification
 
 Once connected, verify access:
 
@@ -241,7 +232,7 @@ ssh -i your-key.pem ec2-user@<private-ip-address>
 # Access RDS, ElastiCache, or other private services
 ```
 
-## Troubleshooting
+### Troubleshooting
 
 ### Connection Failed
 
@@ -262,7 +253,7 @@ ssh -i your-key.pem ec2-user@<private-ip-address>
 - Verify certificate format includes BEGIN/END lines
 - Check certificate hasn't expired
 
-## Security Best Practices
+### Security Best Practices
 
 1. **One certificate per user** - Never share certificates
 2. **Enable connection logging** - Use CloudWatch for audit trails
@@ -272,7 +263,7 @@ ssh -i your-key.pem ec2-user@<private-ip-address>
 6. **Restrict authorization rules** - Use specific CIDRs instead of 0.0.0.0/0
 7. **Use security groups** - Limit VPN client access to only required resources
 
-## Certificate Revocation
+### Certificate Revocation
 
 To revoke a user's access:
 
@@ -281,7 +272,7 @@ To revoke a user's access:
 3. **Actions** → **Delete**
 4. User will lose VPN access within minutes
 
-## Cost Considerations
+### Cost Considerations
 
 AWS Client VPN pricing includes:
 - **Endpoint association**: ~$0.10/hour per subnet association
@@ -290,16 +281,8 @@ AWS Client VPN pricing includes:
 
 Estimated monthly cost for 5 users: ~$100-150/month
 
-## Additional Resources
+### Additional Resources
 
 - [AWS Client VPN Documentation](https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/what-is.html)
 - [OpenVPN easy-rsa Documentation](https://github.com/OpenVPN/easy-rsa)
 - [AWS VPN Client User Guide](https://docs.aws.amazon.com/vpn/latest/clientvpn-user/client-vpn-user-what-is.html)
-
-## License
-
-This guide is provided as-is for educational purposes.
-
-## Contributing
-
-Feel free to submit issues or pull requests to improve this guide.
