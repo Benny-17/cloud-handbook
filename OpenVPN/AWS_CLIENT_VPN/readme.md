@@ -58,10 +58,7 @@ or
 Create one certificate per user for better security and audit trails:
 
 ```bash
-# Generate client certificates (one per user)
-./easyrsa build-client-full client1 nopass
-./easyrsa build-client-full client2 nopass
-./easyrsa build-client-full client3 nopass
+./easyrsa build-client-full client1.domain.tld nopass
 ```
 
 ### Locate Generated Certificates
@@ -286,3 +283,4 @@ Estimated monthly cost for 5 users: ~$100-150/month
 - [AWS Client VPN Documentation](https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/what-is.html)
 - [OpenVPN easy-rsa Documentation](https://github.com/OpenVPN/easy-rsa)
 - [AWS VPN Client User Guide](https://docs.aws.amazon.com/vpn/latest/clientvpn-user/client-vpn-user-what-is.html)
+
